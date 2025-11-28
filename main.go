@@ -56,6 +56,7 @@ func main() {
 	http.HandleFunc("/health", handlers.Health)
 	http.HandleFunc("/ping", handlers.Ping)
 	http.HandleFunc("/users", h.Users)
+	http.HandleFunc("/users/delete", h.Delete)
 
 	addr := ":8080"
 	log.Printf("Listening on %s\n", addr)
