@@ -1,11 +1,13 @@
 package handlers
 
-import "github.com/jackc/pgx/v5"
+import (
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
 type Handler struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
-func New(db *pgx.Conn) *Handler {
+func New(db *pgxpool.Pool) *Handler {
 	return &Handler{DB: db}
 }

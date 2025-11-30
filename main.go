@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/jackc/pgx/v5"
+	
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -19,16 +19,11 @@ func main() {
 
 	url := os.Getenv("DB_URL")
 
-	db, err := pgx.Connect(context.Background(), url)
+	db, err := pgxpool.New(context.Background(), url)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func(db *pgx.Conn, ctx context.Context) {
-		err = db.Close(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(db, context.Background())
+	defer db.Close()
 	log.Println("Connected to database")
 
 	_, err = db.Exec(context.Background(), `
@@ -55,8 +50,7 @@ func main() {
 	//роутер
 	http.HandleFunc("/health", handlers.Health)
 	http.HandleFunc("/ping", handlers.Ping)
-	http.HandleFunc("/users", h.Users)
-	http.HandleFunc("/users/delete", h.Delete)
+	http.HandleFunc("/users/", h.Users)
 
 	addr := ":8080"
 	log.Printf("Listening on %s\n", addr)
