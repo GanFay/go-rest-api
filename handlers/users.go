@@ -2,8 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type user struct {
@@ -26,6 +30,40 @@ func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) usersGet(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id != "" {
+		intID, err := strconv.Atoi(id)
+		if err != nil {
+			http.Error(w, "id must be int", http.StatusBadRequest)
+			return
+		}
+		var u user
+		err = h.DB.QueryRow(
+			r.Context(),
+			`SELECT id, name, gmail, password, created_at FROM users WHERE id = $1`,
+			intID,
+		).Scan(
+			&u.ID,
+			&u.Name,
+			&u.Gmail,
+			&u.Password,
+			&u.Time,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				http.Error(w, "user not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "db error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(u); err != nil {
+			http.Error(w, "cannot encode json", http.StatusInternalServerError)
+		}
+		return
+	}
 
 	query, err := h.DB.Query(r.Context(), `SELECT id, name, gmail, password, created_at FROM users ORDER BY id`)
 	if err != nil {
